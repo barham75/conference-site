@@ -1,26 +1,40 @@
-@import "tailwindcss";
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#f6f7fb; color:#111; }
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
+.grid { display: grid; gap: 14px; }
+.grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+@media (max-width: 800px){ .grid-2,.grid-3{ grid-template-columns: 1fr; } }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+.btn {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 700;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
 }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.input, .select, .textarea {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid #d9dce7;
+  outline: none;
+  background: #fff;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+.label { font-weight: 700; margin-bottom: 6px; display: block; }
+.muted { color:#555; font-size: 13px; }
+.row { display:flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.badge { display:inline-block; padding: 6px 10px; border-radius: 999px; background:#eef1ff; font-weight:700; }
+.table { width:100%; border-collapse: collapse; }
+.table th, .table td { border-bottom: 1px solid #eee; padding: 10px; text-align: start; }
+.hr { height:1px; background:#eee; margin: 14px 0; border:0; }
+.msg-ok { padding: 10px 12px; background:#e9fff0; border:1px solid #bff0cc; border-radius: 12px; }
+.msg-err { padding: 10px 12px; background:#ffecec; border:1px solid #ffbdbd; border-radius: 12px; }
