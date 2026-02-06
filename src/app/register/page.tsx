@@ -11,11 +11,12 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [orgAr, setOrgAr] = useState("");
   const [orgEn, setOrgEn] = useState("");
-  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg("");
+    e.preventDefault();        // 🔴 يمنع POST الافتراضي
+    e.stopPropagation();       // 🔴 مهم جدًا
+    setError("");
 
     const res = await fetch("/api/register", {
       method: "POST",
@@ -32,11 +33,10 @@ export default function RegisterPage() {
     const data = await res.json();
 
     if (!data.ok) {
-      setMsg(data.error || "Error");
+      setError(data.error || "Error");
       return;
     }
 
-    // حفظ محلي فقط
     localStorage.setItem(
       "conf_user",
       JSON.stringify({ email, nameAr, nameEn, orgAr, orgEn })
@@ -46,14 +46,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} action="">
       <input value={nameAr} onChange={e => setNameAr(e.target.value)} />
       <input value={nameEn} onChange={e => setNameEn(e.target.value)} />
       <input value={email} onChange={e => setEmail(e.target.value)} />
       <input value={orgAr} onChange={e => setOrgAr(e.target.value)} />
       <input value={orgEn} onChange={e => setOrgEn(e.target.value)} />
+
       <button type="submit">Enter</button>
-      {msg && <div>{msg}</div>}
+
+      {error && <div style={{ color: "red" }}>{error}</div>}
     </form>
   );
 }
