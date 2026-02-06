@@ -2,18 +2,21 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
 
-    // تثبيت أسماء الحقول
-    const payload = {
-      email: String(body.email || "").trim().toLowerCase(),
-      nameAr: String(body.nameAr || "").trim(),
-      nameEn: String(body.nameEn || "").trim(),
-      orgAr: String(body.orgAr || "").trim(),
-      orgEn: String(body.orgEn || "").trim(),
-    };
+    const email = String(body.email || "").trim().toLowerCase();
+    const nameAr = String(body.nameAr || "").trim();
+    const nameEn = String(body.nameEn || "").trim();
+    const orgAr = String(body.orgAr || "").trim();
+    const orgEn = String(body.orgEn || "").trim();
 
-    if (!payload.email) {
+    if (!email) {
       return NextResponse.json({ ok: false, error: "missing email" }, { status: 400 });
     }
 
@@ -22,33 +25,52 @@ export async function POST(req: Request) {
 
     if (!scriptUrl || !secret) {
       return NextResponse.json(
-        { ok: false, error: "missing env config" },
+        { ok: false, error: "server env missing GOOGLE_SCRIPT_URL/GOOGLE_SCRIPT_SECRET" },
         { status: 500 }
       );
     }
 
-    const res = await fetch(scriptUrl, {
+    // نرسل للـ Google Script
+    const gsRes = await fetch(scriptUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // مهم: نفس أسماء الحقول التي يقرأها السكربت
       body: JSON.stringify({
         secret,
-        email: payload.email,
-        nameAr: payload.nameAr,
-        nameEn: payload.nameEn,
-        orgAr: payload.orgAr,
-        orgEn: payload.orgEn,
+        email,
+        nameAr,
+        nameEn,
+        orgAr,
+        orgEn,
       }),
     });
 
-    const text = await res.text();
-    let data: any = {};
-    try {
-      data = JSON.parse(text);
-    } catch {}
+    const raw = await gsRes.text();
 
-    if (!data.ok) {
+    // Google Script أحيانًا يرجع HTML أو نص غير JSON
+    let data: any = null;
+    try {
+      data = JSON.parse(raw);
+    } catch {
       return NextResponse.json(
-        { ok: false, error: data.message || "Google Script error" },
+        {
+          ok: false,
+          error: "Google Script returned non-JSON",
+          gsStatus: gsRes.status,
+          raw,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!gsRes.ok || !data?.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: data?.message || data?.error || "Google Script error",
+          gsStatus: gsRes.status,
+          gsData: data,
+        },
         { status: 500 }
       );
     }
@@ -56,7 +78,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json(
-      { ok: false, error: err.message || "server error" },
+      { ok: false, error: err?.message || "server error" },
       { status: 500 }
     );
   }
