@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
 
-  // لو كان مسجل قبل، حوله للرئيسية
   useEffect(() => {
     try {
       const u = localStorage.getItem("conf_user");
@@ -66,37 +65,42 @@ export default function RegisterPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json().catch(() => ({}));
+      // اقرأ الرد كنص أولاً (حتى لو ليس JSON)
+      const raw = await res.text();
 
-      if (!res.ok || !data?.ok) {
-        setMsg({
-          type: "err",
-          text: String(data?.error || "حدث خطأ / Error"),
-        });
+      // حاول تحوله JSON لو ممكن
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {};
+      }
+
+      // نجاح
+      if (res.ok && data?.ok) {
+        const displayName = payload.nameEn || payload.nameAr;
+        const userToSave = { ...payload, displayName };
+
+        try {
+          localStorage.setItem("conf_user", JSON.stringify(userToSave));
+        } catch {}
+
+        setMsg({ type: "ok", text: "تم التسجيل ✅ / Registered ✅" });
+        router.replace("/");
         return;
       }
 
-      // حفظ المستخدم
-      const displayName = payload.nameEn || payload.nameAr;
-      const userToSave = {
-        nameAr: payload.nameAr,
-        nameEn: payload.nameEn,
-        email: payload.email,
-        orgAr: payload.orgAr,
-        orgEn: payload.orgEn,
-        displayName,
-      };
+      // خطأ: اعرض أفضل رسالة ممكنة
+      const reason =
+        String(data?.error || data?.message || "").trim() ||
+        (raw ? raw.slice(0, 200) : `HTTP ${res.status}`);
 
-      try {
-        localStorage.setItem("conf_user", JSON.stringify(userToSave));
-      } catch {}
-
-      setMsg({ type: "ok", text: "تم التسجيل ✅ / Registered ✅" });
-
-      // تحويل للرئيسية
-      router.replace("/");
+      setMsg({
+        type: "err",
+        text: `حدث خطأ / Error: ${reason}`,
+      });
     } catch (e: any) {
-      setMsg({ type: "err", text: e?.message || "Network error" });
+      setMsg({ type: "err", text: `Network error: ${e?.message || e}` });
     } finally {
       setLoading(false);
     }
