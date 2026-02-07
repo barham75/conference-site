@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  async redirects() {
+    return [
+      {
+        source: "/vote",
+        destination: "/poster-vote",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
