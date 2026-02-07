@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import RequireUser from "../components/RequireUser";
 import FooterNav from "../components/FooterNav";
 
+type ResultsState = {
+  topPoster?: string;
+  topCount?: number;
+  counts?: Record<string, number>;
+};
+
 export default function VotePage() {
   const posters = useMemo(() => Array.from({ length: 30 }, (_, i) => `P${i + 1}`), []);
   const [posterId, setPosterId] = useState("P1");
@@ -11,18 +17,39 @@ export default function VotePage() {
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
-
-  const [results, setResults] = useState<{ topPoster?: string; topCount?: number; counts?: Record<string, number> } | null>(null);
+  const [results, setResults] = useState<ResultsState | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("conf_user");
     if (raw) setUser(JSON.parse(raw));
   }, []);
 
+  function normalizeResults(data: any): ResultsState | null {
+    // Apps Script يرجع: { ok:true, results:[{posterId, votes}, ...] }
+    if (data?.ok && Array.isArray(data?.results)) {
+      const counts: Record<string, number> = {};
+      for (const row of data.results) {
+        const p = String(row?.posterId ?? "").trim();
+        const v = Number(row?.votes ?? 0);
+        if (p) counts[p] = v;
+      }
+      const top = Object.entries(counts).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0];
+      return { counts, topPoster: top?.[0], topCount: top?.[1] ?? 0 };
+    }
+
+    // لو رجع شكل آخر: { topPoster, topCount, counts }
+    if (data?.ok && data?.counts) {
+      return { topPoster: data.topPoster, topCount: data.topCount, counts: data.counts };
+    }
+
+    return null;
+  }
+
   async function loadResults() {
-    const res = await fetch("/api/vote", { method: "GET" });
+    const res = await fetch("/api/poster-vote", { method: "GET" });
     const data = await res.json();
-    if (data.ok) setResults(data);
+    const r = normalizeResults(data);
+    if (r) setResults(r);
   }
 
   useEffect(() => {
@@ -32,6 +59,7 @@ export default function VotePage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+
     if (!user?.email) {
       setMsg({ type: "err", text: "يجب التسجيل أولاً / Please register first." });
       return;
@@ -39,15 +67,16 @@ export default function VotePage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/vote", {
+      const res = await fetch("/api/poster-vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, posterId }),
       });
+
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "Failed");
 
-      setMsg({ type: "ok", text: data.message || "تم التصويت ✅ / Voted ✅" });
+      setMsg({ type: "ok", text: "تم التصويت ✅ / Voted ✅" });
       await loadResults();
     } catch (e: any) {
       setMsg({ type: "err", text: e?.message || "Error" });
@@ -70,7 +99,9 @@ export default function VotePage() {
               <label className="label">اختر البوستر / Select poster</label>
               <select className="select" value={posterId} onChange={(e) => setPosterId(e.target.value)}>
                 {posters.map((p) => (
-                  <option key={p} value={p}>{p}</option>
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
               </select>
             </div>
@@ -85,6 +116,7 @@ export default function VotePage() {
           <hr className="hr" />
 
           <div style={{ fontWeight: 900, marginBottom: 8 }}>النتائج / Results</div>
+
           {results?.topPoster ? (
             <div className="row" style={{ justifyContent: "space-between" }}>
               <span className="badge">Top: {results.topPoster}</span>
@@ -98,13 +130,19 @@ export default function VotePage() {
             <div style={{ overflowX: "auto", marginTop: 10 }}>
               <table className="table">
                 <thead>
-                  <tr><th>Poster</th><th>Votes</th></tr>
+                  <tr>
+                    <th>Poster</th>
+                    <th>Votes</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {Object.entries(results.counts)
                     .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
                     .map(([p, c]) => (
-                      <tr key={p}><td>{p}</td><td>{c}</td></tr>
+                      <tr key={p}>
+                        <td>{p}</td>
+                        <td>{c}</td>
+                      </tr>
                     ))}
                 </tbody>
               </table>

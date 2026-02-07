@@ -78,7 +78,9 @@ export default function EvaluationPage() {
                     }}
                   >
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <option key={n} value={n}>{n}</option>
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
                     ))}
                   </select>
                   <span className="badge">Value: {vals[i]}</span>
@@ -103,4 +105,3 @@ export default function EvaluationPage() {
     </RequireUser>
   );
 }
-
