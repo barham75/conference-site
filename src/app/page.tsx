@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import RequireUser from "./components/RequireUser";
-import FooterNav from "./components/FooterNav";
 import { MenuCard } from "./components/Cards";
 
 export default function HomePage() {
@@ -65,17 +64,11 @@ export default function HomePage() {
             descAr="شعارات الشركات الداعمة"
             descEn="Sponsor logos"
           />
-          <MenuCard
-            href="/chatbot"
-            titleAr="Chatbot"
-            titleEn="Chatbot"
-            descAr="إجابات من ملف Word"
-            descEn="Answers extracted from Word"
-          />
         </div>
       </main>
 
-      <FooterNav />
+      {/* تم إلغاء الفوتر في الصفحة الرئيسية */}
+      {/* <FooterNav /> */}
     </RequireUser>
   );
 }
