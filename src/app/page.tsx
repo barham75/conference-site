@@ -2,14 +2,37 @@
 
 import { useEffect, useMemo, useState } from "react";
 import RequireUser from "./components/RequireUser";
+import FooterNav from "./components/FooterNav";
 import { MenuCard } from "./components/Cards";
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null);
+  const [regNo, setRegNo] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("conf_user");
-    if (raw) setUser(JSON.parse(raw));
+    if (!raw) return;
+
+    const u = JSON.parse(raw);
+    setUser(u);
+
+    // جلب رقم التسجيل من API حسب الإيميل
+    const email = String(u?.email || "").trim().toLowerCase();
+    if (!email) return;
+
+    fetch(`/api/reg-number?email=${encodeURIComponent(email)}`, {
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        // إذا لم يوجد رقم أو رجع null => لا نعرض شيء
+        if (data?.ok === true && data?.regNo) {
+          setRegNo(String(data.regNo));
+        } else {
+          setRegNo(null);
+        }
+      })
+      .catch(() => setRegNo(null));
   }, []);
 
   const welcomeName = useMemo(() => {
@@ -22,9 +45,19 @@ export default function HomePage() {
       <main className="container" style={{ paddingTop: 20, paddingBottom: 20 }}>
         <div className="card">
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>
-              Welcome {welcomeName ? `, ${welcomeName}` : ""}
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 18 }}>
+                Welcome {welcomeName ? `, ${welcomeName}` : ""}
+              </div>
+
+              {/* رقم التسجيل يظهر فقط إذا كان موجودًا */}
+              {regNo && (
+                <div className="muted" style={{ marginTop: 4 }}>
+                  Registration No: <strong>{regNo}</strong>
+                </div>
+              )}
             </div>
+
             <span className="badge">{user?.email}</span>
           </div>
 
@@ -64,11 +97,17 @@ export default function HomePage() {
             descAr="شعارات الشركات الداعمة"
             descEn="Sponsor logos"
           />
+          <MenuCard
+            href="/chatbot"
+            titleAr="Chatbot"
+            titleEn="Chatbot"
+            descAr="إجابات من ملف Word"
+            descEn="Answers extracted from Word"
+          />
         </div>
       </main>
 
-      {/* تم إلغاء الفوتر في الصفحة الرئيسية */}
-      {/* <FooterNav /> */}
+      <FooterNav />
     </RequireUser>
   );
 }
