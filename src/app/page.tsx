@@ -97,13 +97,7 @@ export default function HomePage() {
             descAr="شعارات الشركات الداعمة"
             descEn="Sponsor logos"
           />
-          <MenuCard
-            href="/chatbot"
-            titleAr="Chatbot"
-            titleEn="Chatbot"
-            descAr="إجابات من ملف Word"
-            descEn="Answers extracted from Word"
-          />
+          
         </div>
       </main>
 
