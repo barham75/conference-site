@@ -17,11 +17,23 @@ export async function POST(req: Request) {
     const orgEn = String(body.orgEn || "").trim();
 
     if (!email) {
-      return NextResponse.json({ ok: false, error: "missing email" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "missing email" },
+        { status: 400 }
+      );
     }
 
     const scriptUrl = process.env.GOOGLE_SCRIPT_URL;
     const secret = process.env.GOOGLE_SCRIPT_SECRET;
+
+    // تشخيص يظهر في Vercel Logs
+    console.log("REGISTER API env url =", scriptUrl);
+    console.log(
+      "REGISTER API secret len =",
+      secret?.length,
+      "secret =",
+      JSON.stringify(secret)
+    );
 
     if (!scriptUrl || !secret) {
       return NextResponse.json(
@@ -34,7 +46,8 @@ export async function POST(req: Request) {
     const gsRes = await fetch(scriptUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // مهم: نفس أسماء الحقول التي يقرأها السكربت
+      redirect: "follow",
+      cache: "no-store",
       body: JSON.stringify({
         secret,
         email,
@@ -47,7 +60,10 @@ export async function POST(req: Request) {
 
     const raw = await gsRes.text();
 
-    // Google Script أحيانًا يرجع HTML أو نص غير JSON
+    // تشخيص إضافي
+    console.log("REGISTER API gs status =", gsRes.status);
+    console.log("REGISTER API gs raw sample =", raw.slice(0, 300));
+
     let data: any = null;
     try {
       data = JSON.parse(raw);
@@ -57,7 +73,7 @@ export async function POST(req: Request) {
           ok: false,
           error: "Google Script returned non-JSON",
           gsStatus: gsRes.status,
-          raw,
+          sample: raw.slice(0, 800),
         },
         { status: 500 }
       );
