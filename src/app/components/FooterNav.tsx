@@ -5,12 +5,19 @@ const items = [
   { href: "/vote", ar: "تصويت افضل بوستر", en: "Best Poster Voting" },
   { href: "/evaluation", ar: "تقييم المؤتمر", en: "Conference Evaluation" },
   { href: "/sponsors", ar: "الداعمون", en: "Sponsors" },
-  { href: "/chatbot", ar: "Chatbot", en: "Chatbot" },
+  // ❌ تم حذف chatbot نهائيًا
 ];
 
 export default function FooterNav() {
   return (
-    <footer style={{ position: "sticky", bottom: 0, background: "white", borderTop: "1px solid #eee" }}>
+    <footer
+      style={{
+        position: "sticky",
+        bottom: 0,
+        background: "white",
+        borderTop: "1px solid #eee",
+      }}
+    >
       <div className="container">
         <div className="row" style={{ justifyContent: "space-between" }}>
           {items.map((it) => (
