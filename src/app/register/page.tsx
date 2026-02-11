@@ -16,7 +16,6 @@ export default function RegisterPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    e.stopPropagation();
     setError("");
 
     if (!email || !nameAr || !nameEn) {
@@ -41,19 +40,24 @@ export default function RegisterPage() {
 
       const data = await res.json();
 
-      if (!data.ok) {
-        setError(data.message || "حدث خطأ أثناء التسجيل");
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || data?.message || "حدث خطأ أثناء التسجيل");
         setLoading(false);
         return;
       }
 
-      // حفظ المستخدم محليًا
+      // حفظ المستخدم محليًا (اختياري)
       localStorage.setItem(
         "conf_user",
         JSON.stringify({ email, nameAr, nameEn, orgAr, orgEn })
       );
 
-      router.replace("/");
+      setLoading(false);
+
+      // ✅ أهم تعديل: Reload كامل لضمان وصول Set-Cookie قبل صفحة /
+      window.location.href = "/";
+      return;
+
     } catch (err) {
       setError("فشل الاتصال بالخادم");
       setLoading(false);

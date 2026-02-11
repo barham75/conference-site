@@ -1,107 +1,56 @@
-"use client";
+import type { CSSProperties } from "react";
+import { cookies } from "next/headers";
 
-import { useEffect, useMemo, useState } from "react";
-import RequireUser from "./components/RequireUser";
-import FooterNav from "./components/FooterNav";
-import { MenuCard } from "./components/Cards";
-
-export default function HomePage() {
-  const [user, setUser] = useState<any>(null);
-  const [regNo, setRegNo] = useState<string | null>(null);
-
-  useEffect(() => {
-    const raw = localStorage.getItem("conf_user");
-    if (!raw) return;
-
-    const u = JSON.parse(raw);
-    setUser(u);
-
-    // جلب رقم التسجيل من API حسب الإيميل
-    const email = String(u?.email || "").trim().toLowerCase();
-    if (!email) return;
-
-    fetch(`/api/reg-number?email=${encodeURIComponent(email)}`, {
-      cache: "no-store",
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        // إذا لم يوجد رقم أو رجع null => لا نعرض شيء
-        if (data?.ok === true && data?.regNo) {
-          setRegNo(String(data.regNo));
-        } else {
-          setRegNo(null);
-        }
-      })
-      .catch(() => setRegNo(null));
-  }, []);
-
-  const welcomeName = useMemo(() => {
-    if (!user) return "";
-    return user.nameEn?.trim() ? user.nameEn : user.nameAr;
-  }, [user]);
+export default async function HomePage() {
+  const cookieStore = await cookies();   // ✅ مهم await
+  const email = cookieStore.get("conf_email")?.value ?? "";
 
   return (
-    <RequireUser>
-      <main className="container" style={{ paddingTop: 20, paddingBottom: 20 }}>
-        <div className="card">
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 18 }}>
-                Welcome {welcomeName ? `, ${welcomeName}` : ""}
-              </div>
+    <main style={wrap}>
+      <h1 style={{ marginTop: 30 }}>Conference Site</h1>
 
-              {/* رقم التسجيل يظهر فقط إذا كان موجودًا */}
-              {regNo && (
-                <div className="muted" style={{ marginTop: 4 }}>
-                  Registration No: <strong>{regNo}</strong>
-                </div>
-              )}
-            </div>
+      <p style={{ opacity: 0.8 }}>
+        {email
+          ? `Logged in as: ${email}`
+          : "Please register first at /register"}
+      </p>
 
-            <span className="badge">{user?.email}</span>
-          </div>
-
-          <div className="muted" style={{ marginTop: 6 }}>
-            اختر خدمة من القائمة التالية / Choose a service:
-          </div>
-        </div>
-
-        <div style={{ height: 14 }} />
-
-        <div className="grid grid-2">
-          <MenuCard
-            href="/program"
-            titleAr="برنامج المؤتمر"
-            titleEn="Conference Program"
-            descAr="عرض الجدول من ملف اكسل/شيت"
-            descEn="Schedule imported from Sheet"
-          />
-          <MenuCard
-            href="/vote"
-            titleAr="تصويت افضل بوستر"
-            titleEn="Best Poster Voting"
-            descAr="تصويت واحد لكل بريد + عرض النتائج"
-            descEn="One vote per email + show results"
-          />
-          <MenuCard
-            href="/evaluation"
-            titleAr="تقييم المؤتمر"
-            titleEn="Conference Evaluation"
-            descAr="5 أسئلة (1-5) + نتيجة من 100"
-            descEn="5 questions (1-5) + score /100"
-          />
-          <MenuCard
-            href="/sponsors"
-            titleAr="الداعمون"
-            titleEn="Sponsors"
-            descAr="شعارات الشركات الداعمة"
-            descEn="Sponsor logos"
-          />
-          
-        </div>
-      </main>
-
-      <FooterNav />
-    </RequireUser>
+      <div style={grid}>
+        <a style={card} href="/program">Program</a>
+        <a style={card} href="/poster-vote">Poster Vote</a>
+        <a style={card} href="/evaluation">Evaluation</a>
+        <a style={card} href="/lunch-code">Lunch Hall Access</a>
+        <a style={card} href="/sponsors">Sponsors</a>
+      </div>
+    </main>
   );
 }
+
+const wrap: CSSProperties = {
+  minHeight: "100vh",
+  padding: 24,
+  background: "#f5f7fb",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 14,
+};
+
+const grid: CSSProperties = {
+  display: "grid",
+  gap: 12,
+  width: "min(520px, 100%)",
+};
+
+const card: CSSProperties = {
+  display: "block",
+  background: "#fff",
+  padding: "14px 16px",
+  borderRadius: 12,
+  textDecoration: "none",
+  color: "#111",
+  boxShadow: "0 10px 25px rgba(0,0,0,.06)",
+  border: "1px solid #e6e8ef",
+  fontWeight: 700,
+  cursor: "pointer",
+};
